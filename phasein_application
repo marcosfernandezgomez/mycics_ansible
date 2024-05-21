@@ -1,0 +1,68 @@
+- name:  CICS CMCI Report
+
+  collections:
+      - ibm.ibm_zos_cics
+
+  hosts: 'all'
+  gather_facts: 'false'
+
+  vars_prompt:
+   - name: cmci_user
+     prompt: Usuario
+     private: no
+   - name: cmci_password
+     prompt: Contraseña
+   - name: programa
+     prompt: Programa para hcerle PHASEIN
+     private: no
+    #programa: 'KK52ANAL'
+
+  tasks:
+    ############################################################################
+    # Install module dependencies
+    ############################################################################
+
+    ############################################################################
+    # Get information about CICS regions from the supplied context, using CMCI
+    ############################################################################
+    - name: Get information about CICS regions
+      delegate_to: 'localhost'
+      ibm.ibm_zos_cics.cmci_get:
+        context: '{{ context }}'
+        scope: '{{ scope }}'
+        cmci_host: '{{ cmci_host }}'
+        cmci_port: '{{ cmci_port | int }}'
+        cmci_user: '{{ cmci_user | default(omit) }}'
+        cmci_password: '{{ cmci_password | default(omit) }}'
+        scheme: '{{ scheme }}'
+        type: 'CICSProgram'
+        resources:
+            filter:
+              PROGRAM: '{{ programa }}'
+        #type: 'CICSRegion'
+      register: result
+
+    - name: 'HTTP Phasein programa'
+      delegate_to: 'localhost'
+      ibm.ibm_zos_cics.cmci_action:
+        context: '{{ context }}'
+        scope: '{{ scope }}'
+        cmci_host: '{{ cmci_host }}'
+        cmci_port: '{{ cmci_port | int }}'
+        cmci_user: '{{ cmci_user | default(omit) }}'
+        cmci_password: '{{ cmci_password | default(omit) }}'
+        scheme: '{{ scheme }}'
+        type: 'CICSProgram'
+        action_name: PHASEIN
+        resources:
+          filter:
+            PROGRAM: '{{ programa }}'
+
+
+    ############################################################################
+    # Print the response from CMCI to the log - useful to see attribute names!
+    ############################################################################
+    - debug:
+        msg: '{{ result }}'
+
+    ############################################################################
