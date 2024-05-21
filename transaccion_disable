@@ -1,0 +1,59 @@
+- name:  CICS CMCI Report
+  collections:
+      - ibm.ibm_zos_cics
+  hosts: 'all'
+  gather_facts: 'false'
+  vars_prompt:
+   - name: cmci_user
+     prompt: Usuario
+     private: no
+   - name: cmci_password
+     prompt: Contraseña
+   - name: transaccion
+     prompt: Transaccion
+     default: "KK"
+     private: no
+  vars:
+    attributes:
+      - eyu_cicsname
+      - release
+      - jobid
+      - totltasks
+  tasks:
+    ############################################################################
+    # Install module dependencies
+    ############################################################################
+
+    ############################################################################
+    # Deshabilitar o Habilitar una transacción CICS
+    ###########################################################################
+    - name: Get information about CICS regions
+      delegate_to: 'localhost'
+      cmci_get:
+        context: '{{ context }}'
+        scope: '{{ scope }}'
+        cmci_host: '{{ cmci_host }}'
+        cmci_port: '{{ cmci_port | int }}'
+        cmci_user: '{{ cmci_user | default(omit) }}'
+        cmci_password: '{{ cmci_password | default(omit) }}'
+        scheme: '{{ scheme }}'
+        type: 'CICSLocalTransaction'
+        resources:
+            filter:
+              tranid: '{{ transaccion }}'
+      register: result
+    - name: Disable Transaction on a CICS Region
+      delegate_to: 'localhost'
+      cmci_action:
+        context: '{{ context }}'
+        scope: '{{ scope }}'
+        cmci_host: '{{ cmci_host }}'
+        cmci_port: '{{ cmci_port | int }}'
+        cmci_user: '{{ cmci_user | default(omit) }}'
+        cmci_password: '{{ cmci_password | default(omit) }}'
+        scheme: '{{ scheme }}'
+        type: 'CICSLocalTransaction'
+        action_name: 'DISABLE'
+        resources:
+            filter:
+              tranid: '{{ transaccion }}'
